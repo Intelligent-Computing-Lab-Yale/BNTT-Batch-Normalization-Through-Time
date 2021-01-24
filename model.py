@@ -77,7 +77,7 @@ class SNN_VGG9_BNTT(nn.Module):
         self.fc2 = nn.Linear(1024, self.num_cls, bias=bias_flag)
 
         self.conv_list = [self.conv1, self.conv2, self.conv3, self.conv4, self.conv5, self.conv6, self.conv7]
-        self.bntt_list = [self.bntt1, self.bntt2, self.bntt3, self.bntt4, self.bntt5, self.bntt6, self.bntt7]
+        self.bntt_list = [self.bntt1, self.bntt2, self.bntt3, self.bntt4, self.bntt5, self.bntt6, self.bntt7, self.bntt_fc]
         self.pool_list = [False, self.pool1, False, self.pool2, False, False, self.pool3]
 
         # Turn off bias of BNTT
@@ -121,11 +121,12 @@ class SNN_VGG9_BNTT(nn.Module):
             out_prev = spike_inp
 
             for i in range(len(self.conv_list)):
+                mem_conv_list[i] = self.leak_mem * mem_conv_list[i] + self.bntt_list[i][t](self.conv_list[i](out_prev))
                 mem_thr = (mem_conv_list[i] / self.conv_list[i].threshold) - 1.0
                 out = self.spike_fn(mem_thr)
                 rst = torch.zeros_like(mem_conv_list[i]).cuda()
                 rst[mem_thr > 0] = self.conv_list[i].threshold
-                mem_conv_list[i] = (self.leak_mem * mem_conv_list[i] + self.bntt_list[i][t](self.conv_list[i](out_prev)) - rst)
+                mem_conv_list[i] = mem_conv_list[i] - rst
                 out_prev = out.clone()
 
 
@@ -136,12 +137,12 @@ class SNN_VGG9_BNTT(nn.Module):
 
             out_prev = out_prev.reshape(batch_size, -1)
 
-
+            mem_fc1 = self.leak_mem * mem_fc1 + self.bntt_fc[t](self.fc1(out_prev))
             mem_thr = (mem_fc1 / self.fc1.threshold) - 1.0
             out = self.spike_fn(mem_thr)
             rst = torch.zeros_like(mem_fc1).cuda()
             rst[mem_thr > 0] = self.fc1.threshold
-            mem_fc1 = (self.leak_mem * mem_fc1 + self.bntt_fc[t](self.fc1(out_prev)) - rst)
+            mem_fc1 = mem_fc1 - rst
             out_prev = out.clone()
 
             # accumulate voltage in the last layer
@@ -206,7 +207,7 @@ class SNN_VGG11_BNTT(nn.Module):
         self.fc2 = nn.Linear(4096, self.num_cls, bias=bias_flag)
 
         self.conv_list = [self.conv1, self.conv2, self.conv3, self.conv4, self.conv5, self.conv6, self.conv7, self.conv8]
-        self.bntt_list = [self.bntt1, self.bntt2, self.bntt3, self.bntt4, self.bntt5, self.bntt6, self.bntt7, self.bntt8]
+        self.bntt_list = [self.bntt1, self.bntt2, self.bntt3, self.bntt4, self.bntt5, self.bntt6, self.bntt7, self.bntt8, self.bntt_fc]
         self.pool_list = [self.pool1, self.pool2, False, self.pool3, False, self.pool4, False, self.pool5]
 
         # Turn off bias of BNTT
@@ -251,11 +252,12 @@ class SNN_VGG11_BNTT(nn.Module):
             out_prev = spike_inp
 
             for i in range(len(self.conv_list)):
+                mem_conv_list[i] = self.leak_mem * mem_conv_list[i] + self.bntt_list[i][t](self.conv_list[i](out_prev))
                 mem_thr = (mem_conv_list[i] / self.conv_list[i].threshold) - 1.0
                 out = self.spike_fn(mem_thr)
                 rst = torch.zeros_like(mem_conv_list[i]).cuda()
                 rst[mem_thr > 0] = self.conv_list[i].threshold
-                mem_conv_list[i] = (self.leak_mem * mem_conv_list[i] + self.bntt_list[i][t](self.conv_list[i](out_prev)) - rst)
+                mem_conv_list[i] = mem_conv_list[i] - rst
                 out_prev = out.clone()
 
 
@@ -266,11 +268,12 @@ class SNN_VGG11_BNTT(nn.Module):
 
             out_prev = out_prev.reshape(batch_size, -1)
 
+            mem_fc1 = self.leak_mem * mem_fc1 + self.bntt_fc[t](self.fc1(out_prev))
             mem_thr = (mem_fc1 / self.fc1.threshold) - 1.0
             out = self.spike_fn(mem_thr)
             rst = torch.zeros_like(mem_fc1).cuda()
             rst[mem_thr > 0] = self.fc1.threshold
-            mem_fc1 = (self.leak_mem * mem_fc1 + self.bntt_fc[t](self.fc1(out_prev)) - rst)
+            mem_fc1 = mem_fc1 - rst
             out_prev = out.clone()
 
             # accumulate voltage in the last layer
