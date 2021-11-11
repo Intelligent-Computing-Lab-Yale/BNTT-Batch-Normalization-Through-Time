@@ -2,6 +2,8 @@
 
 This repository contains the source code associated with [arXiv preprint arXiv:2010.01729][arXiv preprint arXiv:2010.01729]
 
+Accepted to Frontiers in Neuroscience (2021)
+
 [arXiv preprint arXiv:2010.01729]: https://arxiv.org/abs/2010.01729
 
 ## Introduction
